@@ -1,0 +1,76 @@
+@startuml
+!define Model class
+!define Controller class
+!define Event class
+!define Channel class
+
+Model User {
+    - int id
+    - String name
+    - String email
+    - String password
+    - timestamps
+}
+
+Model Customer {
+    - int id
+    - String uid
+    - String name
+    - String last_name
+    - String cc
+    - String telefono
+    - Decimal puntos
+    - timestamps
+}
+
+Model Points {
+    - int id
+    - String points
+    - timestamps
+}
+
+Controller AuthController {
+    + register(Request $request)
+    + login(Request $request)
+    + logout(Request $request)
+}
+
+Controller CustomerController {
+    + index(Request $request)
+    + filterByCC(Request $request)
+    + filterByUID(Request $request)
+    + update(Request $request)
+    + updatePointsAccumulated(Request $request, $uid)
+    + searchByUIDOrCC(Request $request)
+    + destroy($id)
+}
+
+Controller PointController {
+    + index()
+    + update(Request $request)
+}
+
+Controller RFIDTagController {
+    + store(Request $request)
+    - String uid
+}
+
+Event RFIDTagReadEvent {
+    + String uid
+    + Array|Null userData
+    + __construct($uid, $userData = null)
+    + broadcastOn(): Channel[]
+    + broadcastWith(): Array
+}
+
+Channel RFIDTagReadChannel {
+    + join(User $user): Array|Bool
+}
+
+AuthController .. User : usa
+CustomerController .. Customer : usa
+PointController .. Points : usa
+RFIDTagController ..> RFIDTagReadEvent : emite
+RFIDTagReadEvent ..> RFIDTagReadChannel : usa
+RFIDTagController .. Customer : busca
+@enduml

@@ -1,0 +1,99 @@
+@startuml
+|Frontend|
+start
+:Usuario ingresa credenciales;
+|API|
+:Validar credenciales;
+|Frontend|
+if (Credenciales correctas?) then (Sí)
+  :Mostrar opciones de usuario;
+else (No)
+  :Mostrar mensaje de error;
+  stop
+endif
+
+|Frontend|
+:Usuario selecciona "Configurar puntos del sistema";
+|API|
+:Enviar configuración de puntos;
+:Guardar configuración en la base de datos;
+|Frontend|
+:Mostrar mensaje de éxito;
+
+|Frontend|
+:Usuario selecciona "Recargar puntos";
+|RC522|
+:Leer tarjeta;
+|ESP32|
+:Decodificar UID;
+|API|
+:Recibir UID;
+:Validar si cliente existe;
+|Frontend|
+if (Cliente encontrado?) then (Sí)
+  :Mostrar datos del cliente;
+  :Permitir recargar puntos;
+  |API|
+  :Actualizar puntos en la base de datos;
+  |Frontend|
+  :Mostrar mensaje de éxito;
+else (No)
+  :Mostrar mensaje de "UID no registrado";
+endif
+
+|Frontend|
+:Usuario selecciona "Registrar cliente";
+|RC522|
+:Leer tarjeta;
+|ESP32|
+:Decodificar UID;
+|API|
+:Enviar UID al frontend a través del canal;
+|Frontend|
+:Mostrar formulario para registrar cliente con UID;
+:Usuario registra datos del cliente;
+:Enviar datos del cliente a la API;
+|API|
+:Guardar datos del cliente en la base de datos;
+|Frontend|
+:Mostrar mensaje de éxito;
+
+|Frontend|
+:Usuario selecciona "Actualizar cliente";
+|Frontend|
+:Enviar CC del cliente a la API para consultar si existe;
+|API|
+:Consultar cliente en la base de datos con el CC;
+if (Cliente encontrado?) then (Sí)
+  |API|
+  :Enviar datos del cliente al frontend;
+  |Frontend|
+  :Mostrar formulario con los datos del cliente;
+  :Usuario actualiza datos;
+  :Enviar datos actualizados a la API;
+  |API|
+  :Actualizar datos del cliente en la base de datos;
+  |Frontend|
+  :Mostrar mensaje de éxito;
+else (No)
+  :Mostrar mensaje de "Cliente no encontrado";
+endif
+
+|Frontend|
+:Usuario selecciona "Listar clientes";
+|Frontend|
+:Solicitar clientes registrados en el mes actual;
+|API|
+:Obtener clientes registrados;
+|Frontend|
+:Mostrar lista de clientes;
+|Frontend|
+:Usuario selecciona "Filtrar por mes/año";
+|Frontend|
+:Solicitar clientes de otro mes/año;
+|API|
+:Obtener clientes filtrados;
+|Frontend|
+:Mostrar lista filtrada de clientes;
+stop
+@enduml

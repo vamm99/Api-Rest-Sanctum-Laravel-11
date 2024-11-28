@@ -11,12 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('products', function (Blueprint $table) {
+        Schema::create('customers', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->string('description');
-            $table->float('amount');
+            $table->string('uid')->unique();
+            $table->string('nombre');
+            $table->string('apellido');
+            $table->string('cc');
+            $table->string('telefono');
+            $table->string('email')->unique();
             $table->timestamps();
+            $table->decimal('saldo_acumulado', 8, 2)->default(0);
         });
     }
 
@@ -25,6 +29,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('products');
+        Schema::dropIfExists('customers');
     }
 };

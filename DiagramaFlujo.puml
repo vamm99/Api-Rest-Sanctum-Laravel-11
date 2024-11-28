@@ -1,0 +1,114 @@
+@startuml
+actor UsuarioWeb as "Frontend (Usuario)"
+actor ESP32 as "ESP32"
+actor RC522 as "RC522 (Lector RFID)"
+participant RFIDTagController
+participant Customer
+participant RFIDTagReadEvent
+participant RFIDTagReadChannel
+participant CustomerController
+participant PointController
+participant AuthController
+participant Session
+
+== Opción 1: Recargar Puntos == 
+UsuarioWeb -> AuthController: POST /login (Credenciales)
+AuthController -> Session: Iniciar sesión con credenciales
+Session -> AuthController: Token de autenticación
+AuthController -> UsuarioWeb: Retornar token de autenticación
+
+UsuarioWeb -> ESP32: Enviar token de autenticación y UID
+ESP32 -> RFIDTagController: POST /store (UID, token)
+RFIDTagController -> Session: Verificar token de autenticación
+alt Token válido
+    RFIDTagController -> Customer: findByUID(UID)
+    alt UID encontrado
+        Customer --> RFIDTagController: Usuario encontrado
+        RFIDTagController -> RFIDTagReadEvent: dispatch(uid, userData)
+        RFIDTagReadEvent -> RFIDTagReadChannel: Autenticar acceso al canal
+        RFIDTagReadChannel --> RFIDTagReadEvent: Acceso autenticado
+        RFIDTagReadEvent --> RFIDTagController: Evento emitido
+        RFIDTagController -> UsuarioWeb: JSON con datos del usuario
+    else UID no encontrado
+        Customer --> RFIDTagController: null
+        RFIDTagController -> RFIDTagReadEvent: dispatch(uid, null)
+        RFIDTagReadEvent -> RFIDTagReadChannel: Autenticar acceso al canal
+        RFIDTagReadChannel --> RFIDTagReadEvent: Acceso autenticado
+        RFIDTagReadEvent --> RFIDTagController: Evento emitido
+        RFIDTagController -> UsuarioWeb: JSON indicando error (UID no encontrado)
+    end
+else Token no válido
+    RFIDTagController -> UsuarioWeb: JSON indicando error (Token no válido)
+end
+
+== Opción 2: Registrar Cliente == 
+UsuarioWeb -> AuthController: POST /login (Credenciales)
+AuthController -> Session: Iniciar sesión con credenciales
+Session -> AuthController: Token de autenticación
+AuthController -> UsuarioWeb: Retornar token de autenticación
+
+UsuarioWeb -> RFIDTagController: Enviar token y UID (UID no registrado)
+RFIDTagController -> Session: Verificar token de autenticación
+alt Token válido
+    RFIDTagController -> UsuarioWeb: Mostrar mensaje "UID no registrado"
+    UsuarioWeb -> CustomerController: POST /store (datos del cliente)
+    CustomerController -> Customer: create(datos del cliente)
+    Customer --> CustomerController: Usuario creado
+    CustomerController -> UsuarioWeb: JSON con datos del cliente
+else Token no válido
+    RFIDTagController -> UsuarioWeb: JSON indicando error (Token no válido)
+end
+
+== Opción 3: Actualizar Cliente ==
+UsuarioWeb -> AuthController: POST /login (Credenciales)
+AuthController -> Session: Iniciar sesión con credenciales
+Session -> AuthController: Token de autenticación
+AuthController -> UsuarioWeb: Retornar token de autenticación
+
+UsuarioWeb -> CustomerController: PUT /update (cc)
+CustomerController -> Session: Verificar token de autenticación
+alt Token válido
+    CustomerController -> Customer: findByCC(cc)
+    alt Cliente encontrado
+        Customer --> CustomerController: Datos del cliente
+        CustomerController -> UsuarioWeb: Formulario para actualizar datos
+    else Cliente no encontrado
+        Customer --> CustomerController: null
+        CustomerController -> UsuarioWeb: JSON indicando error (Cliente no encontrado)
+    end
+else Token no válido
+    CustomerController -> UsuarioWeb: JSON indicando error (Token no válido)
+end
+
+== Opción 4: Listar Clientes ==
+UsuarioWeb -> AuthController: POST /login (Credenciales)
+AuthController -> Session: Iniciar sesión con credenciales
+Session -> AuthController: Token de autenticación
+AuthController -> UsuarioWeb: Retornar token de autenticación
+
+UsuarioWeb -> CustomerController: GET /list (fecha actual)
+CustomerController -> Session: Verificar token de autenticación
+alt Token válido
+    CustomerController -> Customer: getByMonth(fecha actual)
+    Customer --> CustomerController: Lista de clientes
+    CustomerController -> UsuarioWeb: JSON con lista de clientes
+else Token no válido
+    CustomerController -> UsuarioWeb: JSON indicando error (Token no válido)
+end
+
+== Opción 5: Configuración de Puntos ==
+UsuarioWeb -> AuthController: POST /login (Credenciales)
+AuthController -> Session: Iniciar sesión con credenciales
+Session -> AuthController: Token de autenticación
+AuthController -> UsuarioWeb: Retornar token de autenticación
+
+UsuarioWeb -> PointController: GET /config (configuración actual)
+PointController -> Session: Verificar token de autenticación
+alt Token válido
+    PointController -> UsuarioWeb: JSON con configuración de puntos
+    UsuarioWeb -> PointController: PUT /config (actualizar puntos)
+    PointController -> UsuarioWeb: JSON confirmando actualización de puntos
+else Token no válido
+    PointController -> UsuarioWeb: JSON indicando error (Token no válido)
+end
+@enduml
