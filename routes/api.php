@@ -13,6 +13,7 @@ Route::prefix('users')->group(function () {
     Route::post('/tag', [RFIDTagController::class, 'store']);
     Route::post('/puntos', [PointController::class, 'update']);
     Route::get('/puntos', [PointController::class, 'index']);
+    Route::get('/prueba', [PointController::class, 'prueba']);
     // Protejemos las rutas 
     Route::middleware('auth:sanctum')->group(function () {
         // CRUD Básico

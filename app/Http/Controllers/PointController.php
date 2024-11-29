@@ -33,4 +33,11 @@ class PointController extends Controller
             'puntos' => $spot->puntos
         ]);
     }
+
+    public function prueba()
+    {
+        return response()->json([
+            'message' => 'Hola mundo'
+        ]);
+    }
 }
